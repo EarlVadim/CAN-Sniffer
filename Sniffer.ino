@@ -202,13 +202,13 @@ mcp2515_can CAN(CAN_CS);
 #endif
 
 #ifdef ESP32ACAN || ESP32S3ACAN
-ACAN2517 can (MCP2517_CS, SPI, 255) ;
+  ACAN2517 can (MCP2517_CS, SPI, 255) ;
 #endif
 
 #ifdef ESP32TWAI || ESP32S3TWAI
 twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(CAN_TX_PIN, CAN_RX_PIN, TWAI_MODE_NORMAL);
 twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS(); // Скорость 500 Кбит/с
-twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL(); // Фильтр пропускает все сообщения
+twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL(); // Фильтр пропускает все сообщения 
 #endif
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -236,10 +236,33 @@ void setup()
     attachInterrupt(digitalPinToInterrupt(CAN_INT), CANInterrupt, FALLING);
 
     // настройка скорости обмена и частоты кварца
+    
+#ifdef AVR || ESP
     while (CAN.begin(CAN_500KBPS, MCP_8MHz) != CAN_OK)
     {
         delay(100);
     }
+#endif
+#ifdef ESP32ACAN || ESP32S3ACAN
+    ACAN2517Settings settings2517 (ACAN2517Settings::OSC_40MHz, 500 * 1000) ; // CAN bit rate 125 kb/s
+    settings2517.mRequestedMode = ACAN2517Settings::ListenOnly ; // Select loopback mode  
+    vTaskDelay(25) ;
+    const uint32_t errorCode2517 = can.begin (settings2517, NULL) ;  
+    if (errorCode2517 == 0) Serial.println("CAN started"); else Serial.println("\nCAN NOT started");
+#endif   
+#ifdef ESP32TWAI || ESP32S3TWAI
+    if (twai_driver_install(&g_config, &t_config, &f_config) == ESP_OK) {
+      Serial.println("CAN driver installed");
+      if (twai_start() == ESP_OK) {
+        Serial.println("CAN driver started");
+      }
+    } else {
+      Serial.println("CAN driver NOT installed");
+    }
+#endif    
+
+
+    
     // типы фильтров
     #define STD 0
     #define EXT 1
