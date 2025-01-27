@@ -78,7 +78,7 @@
 #ifdef ESP32ACAN 
     #include <ACAN2517.h>
     #define CAN_INT      12
-    #define CAN_CS        5
+    #define MCP2517_CS    5
     #define MCP2517_MOSI 23
     #define MCP2517_SCK  18
     #define MCP2517_MISO 19    
@@ -93,8 +93,16 @@
     #define MCP2517_MISO 13    
 #endif
 
-#ifdef ESP32TWAI || ESP32S3TWAI
+#ifdef ESP32TWAI 
     #include "driver/twai.h"
+    #define CAN_TX_PIN GPIO_NUM_5  
+    #define CAN_RX_PIN GPIO_NUM_4   
+#endif
+
+#ifdef ESP32S3TWAI
+    #include "driver/twai.h"
+    #define CAN_TX_PIN GPIO_NUM_14  
+    #define CAN_RX_PIN GPIO_NUM_21   
 #endif
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -189,7 +197,19 @@ uint16_t getAndSaveIdInterval(uint32_t id, uint32_t currentTime)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Флаг для обработки прерывания поступления данных из CAN-шины и инициализация CAN
 volatile bool canDataReceived = false;
+#ifdef AVR || ESP
 mcp2515_can CAN(CAN_CS);
+#endif
+
+#ifdef ESP32ACAN || ESP32S3ACAN
+ACAN2517 can (MCP2517_CS, SPI, 255) ;
+#endif
+
+#ifdef ESP32TWAI || ESP32S3TWAI
+twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(CAN_TX_PIN, CAN_RX_PIN, TWAI_MODE_NORMAL);
+twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS(); // Скорость 500 Кбит/с
+twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL(); // Фильтр пропускает все сообщения
+#endif
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Обработчик прерывания поступивших данных
