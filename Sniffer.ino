@@ -1,3 +1,4 @@
+// Версия 2.3 Add ESP32, ESP32-S3 with ACAN2517 and TWAI
 // Версия 2.2
 
 // 2024.08.19 версия 2.2 - отказ от использования ArduinoSTL, переход на обычный массив
@@ -17,6 +18,10 @@
 // Выбор типа микроконтроллера                                                                  //
 #define AVR                                                                                     //
 //#define ESP                                                                                   //
+//#define ESP32ACAN                                                                             //
+//#define ESP32TWAI                                                                             //
+//#define ESP32S3ACAN                                                                           //
+//#define ESP32S3TWAI                                                                           //
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -42,8 +47,6 @@
 #endif
 
 #include <SPI.h>
-#include <mcp2515_can.h>
-
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Параметры подключения к AVR
 #ifdef AVR
@@ -53,7 +56,7 @@
     // MOSI - D11
     // SCK  - D13
     // INT  - D2
-    
+    #include <mcp2515_can.h>
     #define CAN_INT 2   // сигнал INT на D2
     #define CAN_CS 10   // сигнал CS на D10
 #endif
@@ -67,9 +70,31 @@
     // MOSI - GPIO13 (D7)
     // MISO - GPIO12 (D6)
     // CS   - GPIO15 (D8)
-    
+    #include <mcp2515_can.h>
     #define CAN_INT 5   // сигнал INT на GPIO5 (D1)
     #define CAN_CS  15  // сигнал CS на GPIO15 (D8)
+#endif
+
+#ifdef ESP32ACAN 
+    #include <ACAN2517.h>
+    #define CAN_INT      12
+    #define CAN_CS        5
+    #define MCP2517_MOSI 23
+    #define MCP2517_SCK  18
+    #define MCP2517_MISO 19    
+#endif
+
+#ifdef ESP32S3ACAN 
+    #include <ACAN2517.h>
+    #define CAN_INT       2
+    #define CAN_CS       10
+    #define MCP2517_MOSI 11
+    #define MCP2517_SCK  12
+    #define MCP2517_MISO 13    
+#endif
+
+#ifdef ESP32TWAI || ESP32S3TWAI
+    #include "driver/twai.h"
 #endif
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
