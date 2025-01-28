@@ -249,12 +249,14 @@ void setup()
     vTaskDelay(25) ;
     const uint32_t errorCode2517 = can.begin (settings2517, NULL) ;  
     if (errorCode2517 == 0) Serial.println("CAN started"); else Serial.println("\nCAN NOT started");
+    CANMessage frame;
 #endif   
 #ifdef ESP32TWAI || ESP32S3TWAI
     if (twai_driver_install(&g_config, &t_config, &f_config) == ESP_OK) {
       Serial.println("CAN driver installed");
       if (twai_start() == ESP_OK) {
         Serial.println("CAN driver started");
+        twai_message_t frame0;
       }
     } else {
       Serial.println("CAN driver NOT installed");
