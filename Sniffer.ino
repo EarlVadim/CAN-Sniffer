@@ -266,7 +266,7 @@ void setup()
     // типы фильтров
     #define STD 0
     #define EXT 1
-    
+    #ifdef AVR || ESP
     // сброс фильтров
     CAN.init_Filt(0, STD, 0x0);
     CAN.init_Filt(1, STD, 0x0);
@@ -278,6 +278,9 @@ void setup()
     // очистка масок
     CAN.init_Mask(0, STD, 0x0);
     CAN.init_Mask(1, STD, 0x0);
+    #else
+      // фильтры устанавливаются иначе. 
+    #endif
 
     #ifdef WIRELESS
         // включение точки доступа
@@ -338,6 +341,7 @@ void loop()
         }
   #else
         // если в CAN-буфере есть данные...
+    #ifdef AVR || ESP
         if (canDataReceived)
         {
             // сбросить флаг данных в буфере
@@ -362,6 +366,41 @@ void loop()
                 }
             }
         }
+      #endif
+      #ifdef ESP32ACAN || ESP32S3ACAN
+         can.poll () ;
+      if (can.available ()) {
+        can.receive (frame) ;
+
+        outCANFrame.frame.id = frame.id;      
+        outCANFrame.frame.length = frame.len;
+        for (int i=0; i<outCANFrame.frame.length; i++) {
+          outCANFrame.frame.data[i] = frame.data[i];
+        }
+        currentTime = millis();
+        outCANFrame.frame.interval = getAndSaveIdInterval(outCANFrame.frame.id, currentTime);
+        sendPacketToPC();
+        calculateSpeed(currentTime);
+      }
+      #endif
+      #ifdef ESP32TWAI || ESP32S3TWAI
+        if (twai_receive(&frame, pdMS_TO_TICKS(100)) == ESP_OK) {
+        if (frame.identifier == 0) {
+          outCANFrame.frame.id = 0x999;
+        } else {
+          outCANFrame.frame.id = frame0.identifier;
+        }
+        outCANFrame.frame.length = frame.data_length_code;
+        for (int i=0; i<outCANFrame.frame.length; i++) {
+          outCANFrame.frame.data[i] = frame.data[i];
+        }
+      
+        currentTime = millis();
+        outCANFrame.frame.interval = getAndSaveIdInterval(outCANFrame.frame.id, currentTime);
+        sendPacketToPC();
+        calculateSpeed(currentTime);
+       }            
+      #endif
     #endif
 
     #ifdef WIRELESS
